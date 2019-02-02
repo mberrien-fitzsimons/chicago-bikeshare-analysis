@@ -13,6 +13,13 @@ library(tidyverse)
 library(lubridate)
 library(geosphere)
 library(ggrepel)
+library(forcats)
+library(devtools)
+library(extrafont)
+# devtools::install_github('cttobin/ggthemr') # This sets a theme for the entire session
+
+# Import fonts
+loadfonts(device = "pdf")
 ```
 
 
@@ -26,7 +33,7 @@ saveRDS(divvy_trips, file = "divvy_trips.Rda")
 
 
 ```{r include=FALSE}
-# Dataset Set-up 
+# Read in datasets
 bus_cta <- 
   read.csv("cta_bus_ridership_dailytots.csv")
 
@@ -49,7 +56,7 @@ census_2010 <-
 divvy_sample <- 
   sample_frac(divvy, size = .05)
 
-# Add Community Area to dataset
+# Add Community Area and population to divvy dataset
 divvy_census <-
   divvy_sample %>%
   left_join(chi_ca, by = "Community.Areas")
@@ -59,8 +66,22 @@ divvy_census <-
   left_join(census_2010, by = "Community.Areas")
 ```
 
+
+```{r warning=FALSE, message=FALSE, error=FALSE}
+# Create color palette
+color_dis <- c("#F7DD64", "#AA9B56", "#7DF8F2", "#C463B3")
+
+# Create plot theme
+theme_bikeshare <- function () { 
+        theme(
+          
+        )
+  }
+
+```
+
 On average, the South Side accounts for some of the shortest divvy bike trips in the city, while the West Side and Far Southeast Side account for some of the longest. 
-```{r}
+```{r warning=FALSE, message=FALSE, error=FALSE}
 # Source: https://stackoverflow.com/questions/34213765/using-the-geosphere-distm-function-on-a-data-table-to-calculate-distances
 
 #parse date columns
@@ -97,27 +118,38 @@ divvy_distance %>%
 ```
 
 Although the South Side accounts for some of the shortest bike trips in terms of distance, this area accounts for some of the longest trip duration in minutes. A divvy membership includes 30 minutes of "free riding time" from bike check-out to return. In the majority of the Chicago areas, the average ride duration hovers just around the 30-minute mark, but the South, Southwest and West Side do not follow this trend. 
-```{r}
-divvy_census %>%
+```{r warning=FALSE, message=FALSE, error=FALSE}
+divvy_date %>%
   filter(!is.na(Community.Areas)) %>%
-  group_by(Chicago.side, Community.Areas) %>%
+  filter(year == 2014 | year == 2015 | year == 2016 | year == 2017) %>%
+  filter(!TRIP.DURATION > 1440) %>% # Filter for bikes classified as stolen
+  group_by(Chicago.side) %>%
   summarise(average_time = mean(TRIP.DURATION)/60) %>%
-  ggplot(aes(x = reorder(Chicago.side, average_time), y = average_time, fill = Chicago.side)) +
-  geom_col(position = "dodge") +
+  ggplot() +
+  geom_col(
+    aes(
+      x = reorder(Chicago.side, average_time), 
+      y = average_time, 
+      fill = as.factor(Chicago.side)), 
+    position = "dodge") +
   coord_flip() +
   labs(
-    title = "Divvy bike trip lengths are over two times higher \nin South, Southwest and West Chicago",
-    subtitle = "Average divvy bike trip length from 2013 - 2018",
+    title = 
+      "Divvy bike trip duration is greater in Chicago's North \nand South Suburbs",
+    subtitle = "Average Divvy bike trip length from 2014 - 2017",
     caption = "Chicago Data Portal Divvy Trip Data",
     x = "Chicago 'Sides",
     y = "Average Trip Time (In Minutes)") +
-  theme(legend.position = "none")
+  theme_bikeshare()
+#  scale_fill_manual(values = col_palette)
+  
 ```
 
 Upon closer inspection of the three "Chicago Sides" with higher than average rider time, you can see five Community areas that are responsible for increasing the average trip duration time for the South, Southwest and West side. 
-```{r}
+```{r warning=FALSE, message=FALSE, error=FALSE}
 divvy_census %>%
   filter(!is.na(Community.Areas)) %>%
+  filter(!TRIP.DURATION > 1440) %>% # Filter for bikes classified as stolen
   filter(Chicago.side == c("South Side", "Southwest side", "West Side")) %>%
   group_by(Community.Area.Name, Chicago.side) %>%
   summarise(average_time = mean(TRIP.DURATION)/60) %>%
@@ -130,12 +162,13 @@ divvy_census %>%
     caption = "Chicago Data Portal Divvy Trip Data",
     x = "Chicago Community Areas",
     y = "Average Trip Time (In Minutes)") +
-  labs(fill = "Chicago 'Sides'")
+  labs(fill = "Chicago 'Sides'") +
+  scale_x_continuous(expand=c(0,0))
 
 ```
 
 This graph compares divvy ride time duration changes between 2014 and 2017. This shows a strong linkage between number of bike stations in an area and trip duration. All areas show a clear decline in the average trip duration as the number of stations increase. 
-```{r}
+```{r warning=FALSE, message=FALSE, error=FALSE}
 divvy_stations_year <- 
   divvy_date %>%
   filter(!is.na(Community.Areas)) %>%
@@ -167,7 +200,7 @@ divvy_date %>%
 ```
 
 Share of the city's population does not directly correlate with share of the city's divvy ridership. for example, The South Side makes up less than 10% of the city's population, but accounts for over 40% of the rides in 2018. 
-```{r}
+```{r warning=FALSE, message=FALSE, error=FALSE}
 div_area <- 
   divvy_date %>%
   filter(!is.na(Community.Areas)) %>%
@@ -196,4 +229,4 @@ div_area %>%
       
 
 ```
-1
+
