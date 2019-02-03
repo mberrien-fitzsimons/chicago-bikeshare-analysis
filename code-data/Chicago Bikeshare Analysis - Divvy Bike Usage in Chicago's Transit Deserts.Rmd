@@ -170,26 +170,6 @@ divvy_date %>%
 ```
 
 Upon closer inspection of the three "Chicago Sides" with higher than average rider time, you can see five Community areas that are responsible for increasing the average trip duration time for the South, Southwest and West side. 
-```{r warning=FALSE, message=FALSE, error=FALSE}
-divvy_census %>%
-  filter(!is.na(Community.Areas)) %>%
-  filter(!TRIP.DURATION > 1440) %>% # Filter for bikes classified as stolen
-  filter(Chicago.side == c("South Side", "Southwest side", "West Side")) %>%
-  group_by(Community.Area.Name, Chicago.side) %>%
-  summarise(average_time = mean(TRIP.DURATION)/60) %>%
-  ggplot(aes(x = reorder(Community.Area.Name, average_time), y = average_time, 
-             fill = as.factor(Chicago.side))) +
-  geom_boxplot() +
-  coord_flip() +
-    labs(title = "Five community areas in South, Southwest and \nWest Chicago account for above average trip time",
-    subtitle = "Average divvy bike trip length from 2013 - 2018 in South, \nSouthwest and West Side Chicago",
-    caption = "Chicago Data Portal Divvy Trip Data",
-    x = "Chicago Community Areas",
-    y = "Average Trip Time (In Minutes)") +
-  labs(fill = "Chicago 'Sides'") +
-  bikeshare_style()
-```
-
 ```{r}
 divvy_census %>%
   filter(!is.na(Community.Areas)) %>%
@@ -197,18 +177,18 @@ divvy_census %>%
   filter(Chicago.side == c("South Side", "Southwest side", "West Side")) %>%
   group_by(Community.Area.Name, Chicago.side) %>%
   summarise(average_time = mean(TRIP.DURATION)/60) %>%
-  ggplot(aes(x = reorder(Community.Area.Name, average_time), y = average_time)) +
-  geom_segment(aes(yend = average_time, xend = 0))
-
-
-+
-    labs(title = "Five community areas in South, Southwest and \nWest Chicago account for above average trip time",
-    subtitle = "Average divvy bike trip length from 2013 - 2018 in South, \nSouthwest and West Side Chicago",
+  ggplot(aes(x = average_time, 
+             y = reorder(factor(Community.Area.Name), average_time))) + 
+  geom_segment(aes(yend = Community.Area.Name, xend = 0)) +
+  geom_point() +
+  labs(title = "Five community areas in South, Southwest and \nWest Chicago account for above average trip time",
+    subtitle = "Average divvy bike trip length from 2013 - 2018 in South, \nSouthwest and West Side Chicago Commuity Areas",
     caption = "Chicago Data Portal Divvy Trip Data",
-    x = "Chicago Community Areas",
-    y = "Average Trip Time (In Minutes)") +
+    x = "Average Trip Time by Community Area (Minutes)",
+    y = " ") +
   labs(fill = "Chicago 'Sides'") +
-  bikeshare_style()
+  bikeshare_style() +
+  scale_x_continuous(expand = c(0,0))
 ```
 
 
