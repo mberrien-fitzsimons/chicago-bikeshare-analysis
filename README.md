@@ -7,4 +7,4 @@ Bikeshare programs have become increasingly popular in large cities around the U
 
 I’m interested in taking a look at Divvy bike usage in transit deserts around the city of Chicago. My end goal is to 1) understand how divvy bikes are being utilized in areas with diverse transportation options as well as transit deserts, 2) through this analysis understand if Chicago’s bikeshare program is addressing transportation inequality. 
 
-test
+test2
