@@ -19,7 +19,8 @@ library(extrafont)
 # devtools::install_github('cttobin/ggthemr') # This sets a theme for the entire session
 
 # Import fonts
-loadfonts(device = "pdf")
+loadfonts()
+
 ```
 
 
@@ -66,17 +67,24 @@ divvy_census <-
   left_join(census_2010, by = "Community.Areas")
 ```
 
+Create and apply to all of your visualizations a ggplot2 theme (Links to an external site.)Links to an external site. that includes, at a minimum:
+- Font and text size choices for titles, subtitles, captions, labels and annotations
+- Panel and/or background color
+- Major and Minor Gridlines
+(Note: Although all graphs should be assigned your theme, you can still change theme options for each individual graph).
+
 
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 # Create color palette
-color_dis <- c("#F7DD64", "#AA9B56", "#7DF8F2", "#C463B3")
+color_dis <- c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f")
 
-# Create plot theme
+
 theme_bikeshare <- function () { 
+    theme_bw(base_size=12, base_family="Avenir") %+replace% 
         theme(
-          
+          text = element_text(size = 16,  family="Comic Sans MS")
         )
-  }
+}
 
 ```
 
@@ -126,22 +134,34 @@ divvy_date %>%
   group_by(Chicago.side) %>%
   summarise(average_time = mean(TRIP.DURATION)/60) %>%
   ggplot() +
-  geom_col(
-    aes(
-      x = reorder(Chicago.side, average_time), 
+  geom_col(aes(x = reorder(Chicago.side, average_time), 
       y = average_time, 
       fill = as.factor(Chicago.side)), 
     position = "dodge") +
   coord_flip() +
-  labs(
-    title = 
-      "Divvy bike trip duration is greater in Chicago's North \nand South Suburbs",
+  labs(title = "Divvy bike trip duration is greater in Chicago's \nNorth and South Suburbs",
     subtitle = "Average Divvy bike trip length from 2014 - 2017",
     caption = "Chicago Data Portal Divvy Trip Data",
     x = "Chicago 'Sides",
     y = "Average Trip Time (In Minutes)") +
-  theme_bikeshare()
-#  scale_fill_manual(values = col_palette)
+  theme(axis.line = element_line(size = 0.05), 
+        text = element_text(family = "SourceSerifPro-Regular", face = "plain", 
+                              colour = "black", size = 10, 
+                              hjust = 0.5, vjust = 0.5, angle = 0, 
+                              lineheight = 0.9), 
+        strip.text = element_text(size = rel(0.8)), 
+        axis.text.x = element_text(vjust = 1), 
+        axis.ticks = element_blank(), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_line(color = "black", size = 0.1),
+        legend.background = element_rect(fill = "#E5E1DF", color = "black", size = 0.1),
+        panel.background = element_rect(fill = "#EFEBEA", colour = NA),
+        strip.background = element_rect(fill = "red", colour = NA),
+plot.background = element_rect(colour = "white", fill = "#EFEBEA", size = 1),
+plot.margin = unit(c(1, 1, 0.5, 0.5), "lines")) +
+  scale_y_continuous(expand = c(0, 0))
+#  scale_fill_manual(values = color_dis)
   
 ```
 
