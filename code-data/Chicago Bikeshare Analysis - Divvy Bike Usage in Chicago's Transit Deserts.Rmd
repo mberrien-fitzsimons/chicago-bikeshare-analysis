@@ -76,6 +76,7 @@ color_dis <- c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c",
 
 bikeshare_style <- function() {
   theme(
+    axis.line = element_line(size = 0.05),
     text = element_text(family = "SourceSerifPro-Regular", face = "plain", 
                               colour = "black", size = 10, 
                               hjust = 0.5, vjust = 1, angle = 0, 
@@ -114,29 +115,34 @@ divvy_date <-
   separate(dateatime, into = c("date", "time", "ampm"), sep = " ") %>%
   separate(date, into = c("month", "day", "year", sep = " "))
 
+# Create variable "distance_hav" which shows distance bikeride traveled (meters)
 divvy_distance <- 
   divvy_date %>%
   filter(!is.na(Community.Areas)) %>%
-  mutate(distance_hav = 
+  mutate(distance_meters = 
            distHaversine(matrix(
              c(FROM.LONGITUDE, FROM.LATITUDE), ncol = 2),
                                    matrix(
-                                     c(TO.LONGITUDE, TO.LATITUDE), ncol = 2)))
+                                     c(TO.LONGITUDE, TO.LATITUDE), ncol = 2)), 
+         distance_km = distance_meters/1000)
 
 divvy_distance %>%
-  filter(!is.na(distance_hav)) %>%
+  filter(!is.na(distance_km)) %>%
   filter(year == 2018) %>%
-  group_by(Chicago.side, Community.Areas) %>%
-  summarise(avg_trip_distance = mean(distance_hav)) %>%
-  ggplot(aes(x = reorder(Chicago.side, avg_trip_distance), y = avg_trip_distance, fill = Chicago.side)) +
-  geom_boxplot() +
+  group_by(Chicago.side) %>%
+  summarise(avg_distance_km = mean(distance_km)) %>%
+  ggplot(aes(x = reorder(Chicago.side, avg_distance_km), y = avg_distance_km, 
+             fill = Chicago.side), fill = "#2c7bb6") +
+  geom_point() +
   theme(legend.position = "none") +
-  labs(title = "On Average the South Side accounts for the shortest divvy trips \nwithin the City of Chicago",
-    subtitle = "Average distance traveled per divvy trip in 2018",
+  labs(title = "The South Side accounts for the shortest average divvy \ntrips within the City of Chicago",
+    subtitle = "Average distance traveled by divvy trips in 2018",
     caption = "Chicago Data Portal Divvy Trip Data",
     x = "Chicago 'Sides'",
-    y = "Average Divvy Trip Distance (Meters)") +
-  coord_flip()
+    y = "Average Divvy Trip Distance (KM)") +
+  coord_flip() +
+  bikeshare_style()
+  #scale_y_continuous(breaks = c(1, 2, 3))
 
 ```
 
@@ -159,8 +165,8 @@ divvy_date %>%
     caption = "Source: Chicago Data Portal Divvy Trip Data",
     x = "Chicago 'Sides",
     y = "Average Trip Time (In Minutes)") +
-  bikeshare_style()
-  
+  bikeshare_style() +
+  scale_y_continuous(expand=c(0,0), breaks = c(0, 2, 4, 6, 8, 10, 12, 14))
 ```
 
 Upon closer inspection of the three "Chicago Sides" with higher than average rider time, you can see five Community areas that are responsible for increasing the average trip duration time for the South, Southwest and West side. 
@@ -173,16 +179,38 @@ divvy_census %>%
   summarise(average_time = mean(TRIP.DURATION)/60) %>%
   ggplot(aes(x = reorder(Community.Area.Name, average_time), y = average_time, 
              fill = as.factor(Chicago.side))) +
-  geom_col() +
+  geom_boxplot() +
   coord_flip() +
     labs(title = "Five community areas in South, Southwest and \nWest Chicago account for above average trip time",
     subtitle = "Average divvy bike trip length from 2013 - 2018 in South, \nSouthwest and West Side Chicago",
     caption = "Chicago Data Portal Divvy Trip Data",
     x = "Chicago Community Areas",
     y = "Average Trip Time (In Minutes)") +
-  labs(fill = "Chicago 'Sides'")
-
+  labs(fill = "Chicago 'Sides'") +
+  bikeshare_style()
 ```
+
+```{r}
+divvy_census %>%
+  filter(!is.na(Community.Areas)) %>%
+  filter(!TRIP.DURATION > 1440) %>% # Filter for bikes classified as stolen
+  filter(Chicago.side == c("South Side", "Southwest side", "West Side")) %>%
+  group_by(Community.Area.Name, Chicago.side) %>%
+  summarise(average_time = mean(TRIP.DURATION)/60) %>%
+  ggplot(aes(x = reorder(Community.Area.Name, average_time), y = average_time)) +
+  geom_segment(aes(yend = average_time, xend = 0))
+
+
++
+    labs(title = "Five community areas in South, Southwest and \nWest Chicago account for above average trip time",
+    subtitle = "Average divvy bike trip length from 2013 - 2018 in South, \nSouthwest and West Side Chicago",
+    caption = "Chicago Data Portal Divvy Trip Data",
+    x = "Chicago Community Areas",
+    y = "Average Trip Time (In Minutes)") +
+  labs(fill = "Chicago 'Sides'") +
+  bikeshare_style()
+```
+
 
 This graph compares divvy ride time duration changes between 2014 and 2017. This shows a strong linkage between number of bike stations in an area and trip duration. All areas show a clear decline in the average trip duration as the number of stations increase. 
 ```{r warning=FALSE, message=FALSE, error=FALSE}
@@ -205,14 +233,14 @@ divvy_date %>%
              color = as.factor(Chicago.side))) +
   geom_point(alpha = 0.6) +
   geom_line(size = 1) +
-  labs(
-    title="Average ride time reduces as number of stations increase",
+  labs(title="Average ride time reduces as number of stations increase",
     subtitle="DC CAS Math & Reading Scores (2014) ",
     caption="Chicago Data Portal Divvy Trip Data",
     x="Year",
     y="Divvy Trip Time (In Seconds)",
     color = "Chicago 'Side'",
-    size = "Number of Stations")
+    size = "Number of Stations") +
+  bikeshare_style()
 
 ```
 
@@ -225,7 +253,7 @@ div_area <-
   group_by(Community.Areas) %>%
   summarise(pop = unique(Total.Population), 
             n_rides = n()) %>%
-  left_join(chi_commun_areas, by = "Community.Areas") %>%
+  left_join(chi_ca, by = "Community.Areas") %>%
   group_by(Chicago.side) %>%
   summarise(sum_pop = sum(pop),
             sum_rides = sum(n_rides),
@@ -250,11 +278,10 @@ div_area %>%
 Map of bus and train station locations around the city of chicago
 ```{r}
 # grab a center/zoom map and compute its bounding box
-p <- ggmap(get_googlemap(center = c(-87.682571,41.888605),
+chi_map <- ggmap(get_googlemap(center = c(-87.682571,41.888605),
                     zoom = 12, scale = 2,
                     maptype ='terrain',
                     color = 'color'))
 
-p
 ```
 
