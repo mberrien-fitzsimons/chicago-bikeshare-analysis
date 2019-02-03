@@ -16,10 +16,10 @@ library(ggrepel)
 library(forcats)
 library(devtools)
 library(extrafont)
+library(ggmap)
 # devtools::install_github('cttobin/ggthemr') # This sets a theme for the entire session
 
-# Import fonts
-#loadfonts()
+register_google(key = "AIzaSyDu8dhum7j58jpfpQq6aE2jcZLgku9wzzI")
 
 ```
 
@@ -67,11 +67,6 @@ divvy_census <-
   left_join(census_2010, by = "Community.Areas")
 ```
 
-Create and apply to all of your visualizations a ggplot2 theme (Links to an external site.)Links to an external site. that includes, at a minimum:
-- Font and text size choices for titles, subtitles, captions, labels and annotations
-- Panel and/or background color
-- Major and Minor Gridlines
-(Note: Although all graphs should be assigned your theme, you can still change theme options for each individual graph).
 
 
 ```{r warning=FALSE, message=FALSE, error=FALSE}
@@ -106,8 +101,6 @@ bikeshare_style <- function() {
   )
   }
 ```
-
-
 
 
 On average, the South Side accounts for some of the shortest divvy bike trips in the city, while the West Side and Far Southeast Side account for some of the longest. 
@@ -187,8 +180,7 @@ divvy_census %>%
     caption = "Chicago Data Portal Divvy Trip Data",
     x = "Chicago Community Areas",
     y = "Average Trip Time (In Minutes)") +
-  labs(fill = "Chicago 'Sides'") +
-  scale_x_continuous(expand=c(0,0))
+  labs(fill = "Chicago 'Sides'")
 
 ```
 
@@ -253,5 +245,16 @@ div_area %>%
     y="Divvy Bike Rideshare (by percentage)")
       
 
+```
+
+Map of bus and train station locations around the city of chicago
+```{r}
+# grab a center/zoom map and compute its bounding box
+p <- ggmap(get_googlemap(center = c(-87.682571,41.888605),
+                    zoom = 12, scale = 2,
+                    maptype ='terrain',
+                    color = 'color'))
+
+p
 ```
 
