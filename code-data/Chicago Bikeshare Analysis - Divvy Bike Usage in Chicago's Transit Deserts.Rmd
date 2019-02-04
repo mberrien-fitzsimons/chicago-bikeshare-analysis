@@ -2,12 +2,13 @@
 title: "Chicago Bikeshare Analysis - Divvy Bike Usage in Chicago's Transit Deserts"
 author: "Markisha (Misha) Berrien"
 date: "2/3/2019"
-output: html_document
+output:
+  html_document: default
 ---
 
 ```{r}
 # Set-up Environment 
-knitr::opts_chunk$set(include = FALSE)
+#knitr::opts_chunk$set(include = FALSE)
 library(tidyverse)
 library(lubridate)
 library(geosphere)
@@ -18,10 +19,9 @@ library(extrafont)
 library(ggmap)
 # devtools::install_github('cttobin/ggthemr') # This sets a theme for the entire session
 
-register_google(key = "AIzaSyDu8dhum7j58jpfpQq6aE2jcZLgku9wzzI")
+#register_google(key = "AIzaSyDu8dhum7j58jpfpQq6aE2jcZLgku9wzzI")
 
 ```
-
 
 ```{r eval=FALSE, include=FALSE}
 # Save large dataset
@@ -111,8 +111,6 @@ bikeshare_style <- function() {
 
 On average, the South Side accounts for some of the shortest divvy bike trips in the city, while the West Side and Far Southeast Side account for some of the longest. 
 ```{r}
-# Source: https://stackoverflow.com/questions/34213765/using-the-geosphere-distm-function-on-a-data-table-to-calculate-distances
-
 #parse date columns
 divvy_date <- 
   divvy_census %>%
@@ -128,23 +126,22 @@ divvy_distance <-
            distHaversine(matrix(
              c(FROM.LONGITUDE, FROM.LATITUDE), ncol = 2),
                                    matrix(
-                                     c(TO.LONGITUDE, TO.LATITUDE), ncol = 2)), 
-         distance_km = distance_meters/1000)
+                                     c(TO.LONGITUDE, TO.LATITUDE), ncol = 2)))
 
 divvy_distance %>%
-  filter(!is.na(distance_km)) %>%
+  filter(!is.na(distance_meters)) %>%
   filter(year == 2018) %>%
   group_by(Chicago.side) %>%
-  summarise(avg_distance_km = mean(distance_km)) %>%
-  ggplot(aes(x = reorder(Chicago.side, avg_distance_km), y = avg_distance_km, 
+  summarise(avg_distance_meters = mean(distance_meters)) %>%
+  ggplot(aes(x = reorder(Chicago.side, avg_distance_meters), y = avg_distance_meters, 
              fill = Chicago.side), fill = "#2c7bb6") +
   geom_point() +
   theme(legend.position = "none") +
-  labs(title = "The South Side accounts for the shortest average divvy \ntrips within the City of Chicago",
+  labs(title = "The South Side accounts for the shortest average Divvy \ntrips within the City of Chicago",
     subtitle = "Average distance traveled by divvy trips in 2018",
     caption = "Chicago Data Portal Divvy Trip Data",
     x = "Chicago 'Sides'",
-    y = "Average Divvy Trip Distance (KM)") +
+    y = "Average Divvy Trip Distance (Meters)") +
   coord_flip() +
   bikeshare_style()
   #scale_y_continuous(breaks = c(1, 2, 3))
@@ -234,28 +231,29 @@ Share of the city's population does not directly correlate with share of the cit
 div_area <- 
   divvy_date %>%
   filter(!is.na(Community.Areas)) %>%
-  filter(year == 2018) %>%
+  filter(year == 2014 | year == 2015 | year == 2016 | year == 2017) %>%
   group_by(Community.Areas) %>%
   summarise(pop = unique(Total.Population), 
             n_rides = n()) %>%
   left_join(chi_ca, by = "Community.Areas") %>%
   group_by(Chicago.side) %>%
-  summarise(sum_pop = sum(pop),
-            sum_rides = sum(n_rides),
-            perc_rides = sum_rides/17424736, 
-            perc_pop = sum_pop/2695598)
+  summarise(sum_pop = sum(pop), 
+            sum_rides = sum(n_rides)) %>%
+  mutate(perc_rides = (sum_rides / sum(sum_rides) * 100), 
+            perc_pop = (sum_pop / sum(sum_pop)) * 100)
 
 div_area %>%
   ggplot(aes(x = perc_pop, y = perc_rides, color = Chicago.side)) +
   geom_point(size = 1) +
   theme(legend.position = "none") +
   geom_label_repel(aes(label=Chicago.side)) +
-  labs(
-    title="The South Side sccounts for less than 10% of the \npopulation, but accounts for over 40% of rides",
-    subtitle="Divvy Ridership in 2014",
+  labs(title="The South Side sccounts for less than 10% of the \npopulation, but accounts for over 40% of rides",
+    subtitle="Divvy Ridership from 2014 - 2017",
     caption="Chicago Data Portal Divvy Trip Data",
     x="Chicago Population (by percentage)",
-    y="Divvy Bike Rideshare (by percentage)")
+    y="Divvy Bike Rideshare (by percentage)") +
+  bikeshare_style() +
+  scale_x_continuous(expand=c(0,0), breaks = c(0, 5, 10, 15, 20, 25, 30))
 ```
 
 Map of bus and train station locations around the city of chicago
