@@ -60,12 +60,12 @@ cta_bus <-
   read_csv("/Users/Misha/Documents/04-coding-projects/chicago-bikeshare-analysis/code-data/CTA_BusStops.csv")
 
   # Take 5% Sample of divvy dataset
-divvy_sample <- 
-  sample_frac(divvy, size = .05)
+#divvy_sample <- 
+#  sample_frac(divvy, size = .05)
 
 # Add Community Area and population to divvy dataset
 divvy_census <-
-  divvy_sample %>%
+  divvy %>%
   left_join(chi_ca, by = "Community.Areas")
 
 divvy_census <- 
