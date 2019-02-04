@@ -77,9 +77,26 @@ divvy_census <-
 
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 # Create color palette
-color_dis <- c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f")
+# Source: https://drsimonj.svbtle.com/creating-corporate-colour-palettes-for-ggplot2
+bikeshare_colors <- c(
+  aqua    = "#96ceb4",
+  lite_yellow  = "#ffeead",
+  red  = "#ff6f69",
+  yellow    = "#ffcc5c",
+  green   = "#88d8b0")
+
+# Create function 
+bikeshare_cols <- function(...) {
+  cols <- c(...)
+
+  if (is.null(cols))
+    return (bikeshare_colors)
+
+  bikeshare_colors[cols]
+}
 
 
+# Create Theme 
 bikeshare_style <- function() {
   theme(
     axis.line = element_line(size = 0.05),
@@ -160,7 +177,7 @@ divvy_date %>%
   ggplot() +
   geom_col(aes(x = reorder(Chicago.side, average_time), 
       y = average_time, 
-      fill = as.factor(Chicago.side)), fill = "#2c7bb6", 
+      fill = as.factor(Chicago.side)), fill = bikeshare_cols("aqua"), 
     position = "dodge") +
   coord_flip() +
   labs(title = "Divvy bike trip duration is greater in Chicago's \nNorth and South Suburbs",
@@ -181,7 +198,7 @@ divvy_census %>%
   group_by(Community.Area.Name, Chicago.side) %>%
   summarise(average_time = mean(TRIP.DURATION)/60) %>%
   ggplot(aes(x = average_time, 
-             y = reorder(factor(Community.Area.Name), average_time))) + 
+             y = reorder(factor(Community.Area.Name), average_time), color = Chicago.side)) + 
   geom_segment(aes(yend = Community.Area.Name, xend = 0)) +
   geom_point() +
   labs(title = "Five community areas in South, Southwest and \nWest Chicago account for above average trip time",
@@ -189,7 +206,8 @@ divvy_census %>%
     caption = "Chicago Data Portal Divvy Trip Data",
     x = "Average Trip Time by Community Area (Minutes)",
     y = " ") +
-  labs(fill = "Chicago 'Sides'") +
+  labs(fill = "Chicago 'Sides'", 
+       color = "Chicago 'Sides'") +
   bikeshare_style() +
   scale_x_continuous(expand = c(0,0))
 ```
@@ -244,10 +262,10 @@ div_area <-
             perc_pop = (sum_pop / sum(sum_pop)) * 100)
 
 div_area %>%
-  ggplot(aes(x = perc_pop, y = perc_rides, color = Chicago.side)) +
+  ggplot(aes(x = perc_pop, y = perc_rides)) +
   geom_point(size = 1) +
   theme(legend.position = "none") +
-  geom_label_repel(aes(label=Chicago.side)) +
+  geom_label_repel(aes(label=Chicago.side), color = "#2c7bb6") +
   labs(title="The South Side sccounts for less than 10% of the \npopulation, but accounts for over 40% of rides",
     subtitle="Divvy Ridership from 2014 - 2017",
     caption="Chicago Data Portal Divvy Trip Data",
@@ -257,7 +275,9 @@ div_area %>%
   scale_x_continuous(expand=c(0,0), breaks = c(0, 5, 10, 15, 20, 25, 30))
 ```
 
-Map of bus and train station locations around the city of chicago
+
+
+Map of bus station locations around the City of Chicago 
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 # Clean l_stop data
 #Seperate location variable into latitude and longitude variable
@@ -275,7 +295,7 @@ cta_bus <-
 
 # grab a center/zoom map and compute its bounding box
 chi_map <- ggmap(get_googlemap(center = c(-87.682571,41.888605),
-                    zoom = 12, scale = 2,
+                    zoom = 11, scale = 2,
                     maptype ='terrain',
                     color = 'color'))
 
