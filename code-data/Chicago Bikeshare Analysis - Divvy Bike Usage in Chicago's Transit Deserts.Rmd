@@ -99,7 +99,7 @@ colors_all <- c(
   dark_red     = "#e31a1c",
   light_orange = "#fdbf6f",
   dark_orange  = "#ff7f00",
-  light_purple = "#cab2d6")
+  dark_purple = "#9290db")
 
 # Color function (makes it possible to call colors by name)
 bikeshare_colors<- function(...) {
@@ -112,13 +112,14 @@ bikeshare_colors<- function(...) {
 # Create Pallette
 bikeshare_palettes <- list(
   main = bikeshare_colors("light_blue", "dark_blue", "light_green", "dark_green", 
-                        "light_red", "dark_red", "light_orange", "dark_orange", "light_purple"),  
-  dark = bikeshare_colors("dark_blue", "dark_green", "dark_red", "dark_orange", "light_purpl"),
-  light = bikeshare_colors("light_blue", "light_green", "light_red", "light_orange", "light_purple"),
+                        "light_red", "dark_red", "light_orange", "dark_orange", "dark_purple"),  
+  dark = bikeshare_colors("dark_blue", "dark_green", "dark_red", "dark_orange", "dark_purple"),
+  light = bikeshare_colors("light_blue", "light_green", "light_red", "light_orange", "dark_purple"),
   blue_scale = bikeshare_colors("dark_blue", "light_blue"), 
   green_scale = bikeshare_colors("dark_green", "light_green"), 
   red_scale = bikeshare_colors("dark_red", "light_red"), 
-  orange_scale = bikeshare_colors("dark_orange", "light_orange")
+  orange_scale = bikeshare_colors("dark_orange", "light_orange"), 
+  two_variables = bikeshare_colors("dark_blue", "dark_orange")
   )
 
 # Create Pallette function 
@@ -128,6 +129,26 @@ bikeshare_pal <- function(palette = "main", reverse = FALSE, ...) {
   if (reverse) pal <- rev(pal)
 
   colorRampPalette(pal, ...)
+}
+
+scale_color_bikeshare <- function(palette = "main", discrete = TRUE, reverse = FALSE, ...) {
+  pal <- bikeshare_pal(palette = palette, reverse = reverse)
+
+  if (discrete) {
+    discrete_scale("colour", paste0("bikeshare_", palette), palette = pal, ...)
+  } else {
+    scale_color_gradientn(colours = pal(256), ...)
+  }
+}
+
+scale_fill_bikeshare <- function(palette = "main", discrete = TRUE, reverse = FALSE, ...) {
+  pal <- bikeshare_pal(palette = palette, reverse = reverse)
+
+  if (discrete) {
+    discrete_scale("fill", paste0("bikeshare_", palette), palette = pal, ...)
+  } else {
+    scale_fill_gradientn(colours = pal(256), ...)
+  }
 }
 
 # Continuous usage example
@@ -146,7 +167,7 @@ bikeshare_style <- function() {
                               lineheight = 0.9), 
     plot.subtitle = element_text(family = "SourceSerifPro-Regular",
                                size = 8), 
-    legend.background = element_rect(fill = "#DBDBDB", color = "black", size = 0.1),
+    legend.background = element_rect(fill = "white", color = "black", size = 0.1),
     
     axis.text = element_text(family="SourceSerifPro-Regular",
                            size=8,
@@ -191,13 +212,13 @@ station_dates <-
          month = month(STOP.TIME), 
          day = day(STOP.TIME), 
          OPENING.DATE = as.Date(paste(year, month, day, sep='-'))) %>%
-  rename("STATION.ID" = "TO.STATION.ID") %>%
-  select(STATION.ID, OPENING.DATE)
+#  rename("STATION.ID" = "TO.STATION.ID") %>%
+  select(TO.STATION.ID, OPENING.DATE)
 
 # Join opening date information to divvy_station dataframe
 divvy_opening <- 
   divvy_stations %>%
-  left_join(station_dates, by = c("ID" = "STATION.ID")) %>%
+  left_join(station_dates, by = c("ID" = "TO.STATION.ID")) %>%
   mutate(OPENING.YEAR = year(OPENING.DATE)) %>%
   filter(!is.na(OPENING.YEAR))
 
@@ -205,6 +226,7 @@ divvy_opening <-
 ggplot() +
   geom_sf(data = chicago_map, fill = "grey", col = "white") +
   geom_point(data = divvy_opening, aes(Longitude, Latitude, color = factor(OPENING.YEAR)), size = 0.3) +
+  scale_color_bikeshare(palette = "light") +
   ggtitle("Divvy Bike Station Opening by Year")
 ```
 
@@ -235,25 +257,16 @@ divvy_comp %>%
                                         "2017-3", "2017-4", "2017-5", "2017-6"))) %>%
   filter(date >= "2016-06-20" & date < "2017-06-20") %>%
   group_by(date, season) %>%
-  summarise(n_trips = n()) %>%
+  dplyr::summarise(n_trips = n()) %>%
   ggplot(aes(x = date, y = n_trips, fill = season)) +
   geom_bar(stat = "identity") +
-  coord_polar()
+  coord_polar() +
+  scale_fill_bikeshare(palette = "dark")
 ```
 
 ## Plot 2: Usage fluxuation by day broken up by Chicago Sides
 The Southwest and West side show inverse patterns during the day. 
 ```{r warning=FALSE, message=FALSE, error=FALSE}
-divvy_comp %>%
-  filter(year(START.TIME) == c(2014, 2015, 2016, 2017)) %>%
-  filter(!is.na(Community.Areas)) %>%
-  mutate(year = year(START.TIME), 
-         month = month(START.TIME), 
-         day = day(START.TIME), 
-         wday(START.TIME, label = TRUE)) %>%
-  group_by(year, month, day, Chicago.side) %>%
-  count()
-
 divvy_comp %>%
   filter(year(START.TIME) == c(2014, 2015, 2016, 2017)) %>%
   filter(!is.na(Community.Areas)) %>%
@@ -265,11 +278,12 @@ divvy_comp %>%
   count() %>%
   rename("TRIP.NUM" = "n") %>%
   group_by(WEEK.DAY, Chicago.side) %>%
-  summarise(MEAN.TRIP.NUM = mean(TRIP.NUM)) %>%
+  dplyr::summarise(MEAN.TRIP.NUM = mean(TRIP.NUM)) %>%
   ggplot(aes(x = WEEK.DAY, y = MEAN.TRIP.NUM, fill = WEEK.DAY)) +
   geom_col() +
   facet_wrap(~ Chicago.side) +
-  coord_flip()
+  coord_flip() +
+  scale_fill_bikeshare(palette = "main") 
 ```
 
 ## Plot 3: Median Divvy Bike ride time per Community Area (above and below global median)
@@ -287,7 +301,7 @@ divvy_comp %>%
   filter(year(START.TIME) == c(2017)) %>%
   filter(!TRIP.DURATION > 86400) %>% # Filter out bikes classified as stolen (greater than 24 hours)
   group_by(Community.Area.Name, Chicago.side) %>%
-  summarise(median_time = median(TRIP.DURATION)/60) %>% # average trip by comm area in Minutes
+  dplyr::summarise(median_time = median(TRIP.DURATION)/60) %>% # average trip by comm area in Minutes
   mutate(axis_color = ifelse(median_time > 11.5, "blue", "red")) %>%
   ggplot(aes()) +
   geom_segment(aes(x = reorder(as.factor(Community.Area.Name), median_time), xend = Community.Area.Name, y = 11.5, yend = median_time, color = axis_color), size=1.3, alpha=0.9) +
@@ -295,18 +309,32 @@ divvy_comp %>%
     legend.position = "none"
   ) +
   xlab("") +
-  coord_flip()
+  coord_flip() +
+  bikeshare_style()
 ```
 
 ## Plot 4: Divvy Bike Customer type by Chicago Side (proportions)
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 #table(divvy_comp$USER.TYPE, divvy_comp$Chicago.side)
+
+divvy_comp$USER.TYPE <- revalue(divvy_comp$USER.TYPE, replace = c("Customer" = "Single Riders", "Subscriber" = "Annual Member", "Dependent" = "24Hrs Unlimited Rides"))
+
 divvy_comp %>%
+  filter(!USER.TYPE == "24Hrs Unlimited Rides") %>%
   group_by(USER.TYPE) %>%
   ggplot(aes(x = Chicago.side, fill = USER.TYPE)) +
   geom_bar(position = "fill") +
   coord_flip() +
-  ylab("proportion")
+  ylab("proportion") +
+  bikeshare_style() +
+  labs(title = "Divvy Bike Single-ride usage rate is highest on the South Side",
+    subtitle = "Divvy bike customers can choose between three different plans: Single Ride, Explorer Pass and \nAnnual Membership.The proportion of Explorer Pass customers is neglibible and has been omitted.",
+    caption = "Chicago Data Portal Divvy Trip Data",
+    y = "Customer Type Proportions by Chicago Side", 
+    fill = "Divvy Plan Types") +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_x_discrete(expand=c(0,0)) +
+  scale_fill_bikeshare(palette = "two_variables")
 ```
 
 ## Plot 5.2: Proportion of population vs. proportion of trips originating in the area
@@ -320,12 +348,12 @@ divvy_comp %>%
             n_rides = n()) %>%
   left_join(chi_ca, by = "Community.Areas") %>%
   group_by(Chicago.side) %>%
-  summarise(sum_pop = sum(pop), 
+  dplyr::summarise(sum_pop = sum(pop), 
             sum_rides = sum(n_rides)) %>%
   gather(key = object, value = value, c(sum_pop, sum_rides)) %>%
   ggplot(aes(x = object, y = value, fill = Chicago.side)) +
   geom_col(position = "fill") +
-  ggtitle("Proportion of population vs. proportion of trips originating in the area")
+  ggtitle("Proportion of population vs. proportion of trips originating in the area") 
 ```
 
 ## Plot 5.2: Proportion of stations vs. proportion of trips originating in the area
@@ -334,7 +362,7 @@ divvy_comp %>%
   filter(!is.na(Community.Areas)) %>%
   filter(year(START.TIME) == 2017) %>%
   group_by(Chicago.side) %>%
-  summarise(n_rides = n(),
+  dplyr::summarise(n_rides = n(),
             n_stations = n_distinct(FROM.STATION.NAME)) %>%
   gather(key = object, value = value, c(n_rides, n_stations)) %>%
   ggplot(aes(x = object, y = value, fill = Chicago.side)) +
@@ -354,7 +382,7 @@ divvy_comp %>%
          YEAR.MONTH = factor(paste(year, month, sep='-'))) %>%
   filter(year == 2018) %>%
   group_by(Chicago.side) %>%
-  summarise(avg_distance_meters = mean(distance_meters)) %>%
+  dplyr::summarise(avg_distance_meters = mean(distance_meters)) %>%
   ggplot(aes(x = reorder(Chicago.side, avg_distance_meters), y = avg_distance_meters, 
              fill = Chicago.side), fill = "#2c7bb6") +
   geom_point() +
