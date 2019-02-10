@@ -331,7 +331,7 @@ divvy_comp %>%
   bikeshare_style() +
   labs(title = "Divvy Bike Single-ride usage rate is highest on the South Side",
     subtitle = "Divvy bike customers can choose between three different plans: Single Ride, Explorer Pass and \nAnnual Membership.The proportion of Explorer Pass customers is neglibible and has been omitted.",
-    caption = "Chicago Data Portal Divvy Trip Data",
+    caption = "Source: Chicago Data Portal",
     y = "Customer Type Proportions by Chicago Side", 
     fill = "Divvy Plan Types") +
   scale_y_continuous(expand=c(0,0)) +
@@ -341,13 +341,13 @@ divvy_comp %>%
 ```
 
 ## Plot 5.2: Proportion of population vs. proportion of trips originating in the area
-```{r}
+```{r warning=FALSE, message=FALSE, error=FALSE}
 #Proportion of rides per chicago side
 divvy_comp %>%
   filter(!is.na(Community.Areas)) %>%
   filter(year(START.TIME) == c(2017)) %>%
   group_by(Community.Areas) %>%
-  summarise(pop = unique(Total.Population), 
+  dplyr::summarise(pop = unique(Total.Population), 
             n_rides = n()) %>%
   left_join(chi_ca, by = "Community.Areas") %>%
   group_by(Chicago.side) %>%
@@ -359,27 +359,18 @@ divvy_comp %>%
   ggtitle("Proportion of population vs. proportion of trips originating in the area") +
   scale_fill_bikeshare() +
   bikeshare_style() +
-  scale_y_continuous(expand=c(0,0)) +
-  scale_x_discrete(expand=c(0,0))
-```
-
-## Plot 5.2: Proportion of stations vs. proportion of trips originating in the area
-```{r warning=FALSE, message=FALSE, error=FALSE}
-divvy_comp %>%
-  filter(!is.na(Community.Areas)) %>%
-  filter(year(START.TIME) == 2017) %>%
-  group_by(Chicago.side) %>%
-  dplyr::summarise(n_rides = n(),
-            n_stations = n_distinct(FROM.STATION.NAME)) %>%
-  gather(key = object, value = value, c(n_rides, n_stations)) %>%
-  ggplot(aes(x = object, y = value, fill = Chicago.side)) +
-  geom_col(position = "fill") +
-  ggtitle("Proportion of stations vs. proportion of trips originating in the area") +
-  scale_fill_bikeshare() +
-  bikeshare_style() +
-  scale_y_continuous(expand=c(0,0)) +
-  scale_x_discrete(expand=c(0,0))
-
+  labs(title = "Percentage of Divvy bike trips that originate on the South Side far outstrips \nthe areas percentage of Chicago's population",
+    subtitle = "2017 Divvy Ridership Data",
+ #   y = "Customer Type Proportions by Chicago Side", 
+    fill = "Chicago Sides'") +
+  scale_y_continuous(expand=c(0,0), labels=c("0.00" = "0", "0.25" = "25", 
+                                             "0.50" = "50", "0.75" = "75", "1.00" = "100")) +
+  scale_x_discrete(expand=c(0,0), labels=c("sum_pop" = "% of population by Chicago Side", "sum_rides" = "% of Divvy bike rides by Chicago Side")) +
+  scale_fill_bikeshare(palette = "main") +
+  theme(axis.title.y = element_blank()) +
+  theme(axis.title.x = element_blank(), 
+        axis.ticks.x=element_blank(), 
+        axis.title.y=element_blank())
 ```
 
 ## Plot 6.1: Average distance of divvy trip by Chicago Side 
