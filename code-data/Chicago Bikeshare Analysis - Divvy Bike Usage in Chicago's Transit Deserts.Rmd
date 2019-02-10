@@ -20,8 +20,7 @@ library(extrafont)
 library(ggmap)
 library(lubridate)
 library(sf)
-library(plotKML)
-library(plyr)
+#library(plotKML)
 # devtools::install_github('cttobin/ggthemr') # This sets a theme for the entire session
 
 #register_google(key = "AIzaSyDu8dhum7j58jpfpQq6aE2jcZLgku9wzzI")
@@ -156,7 +155,7 @@ scale_fill_bikeshare <- function(palette = "main", discrete = TRUE, reverse = FA
 # bikeshare_pal("dark")(10)
 
 # print main color palette
-display.pal(colors_all, sel=1:length(colors_all), names=FALSE)
+#display.pal(colors_all, sel=1:length(colors_all), names=FALSE)
 
 # Create Theme 
 bikeshare_style <- function() {
@@ -270,7 +269,7 @@ divvy_comp %>%
 The Southwest and West side show inverse patterns during the day. 
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 divvy_comp %>%
-  filter(year(START.TIME) == c(2014, 2015, 2016, 2017)) %>%
+  filter(year(START.TIME) == c(2017)) %>%
   filter(!is.na(Community.Areas)) %>%
   mutate(WEEK.DAY = wday(START.TIME, label = TRUE),
          year = year(START.TIME), 
@@ -278,14 +277,25 @@ divvy_comp %>%
          day = day(START.TIME)) %>%
   group_by(year, month, day, Chicago.side, WEEK.DAY, Chicago.side) %>%
   count() %>%
-  rename("TRIP.NUM" = "n") %>%
+#  rename("TRIP.NUM" = "freq") %>%
   group_by(WEEK.DAY, Chicago.side) %>%
-  dplyr::summarise(MEAN.TRIP.NUM = mean(TRIP.NUM)) %>%
+  dplyr::summarise(MEAN.TRIP.NUM = mean(n)) %>%
   ggplot(aes(x = WEEK.DAY, y = MEAN.TRIP.NUM, fill = WEEK.DAY)) +
   geom_col() +
   facet_wrap(~ Chicago.side) +
   coord_flip() +
-  scale_fill_bikeshare(palette = "main") 
+  scale_fill_bikeshare(palette = "main") +
+  bikeshare_style() +
+  labs(title = "The South Side maintains high average Divvy bike usage throughout the week",
+    subtitle = "Average Divvy bike usage in 2017.",
+    caption = "Source: Chicago Data Portal",
+    y = "Average Bike Rides per Day") +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_x_discrete(expand=c(0,0)) +
+  theme(legend.position="none", 
+        strip.text.x = element_text(size = 10), 
+        panel.margin = unit(1, "lines"),
+        axis.title.y = element_blank())
 ```
 
 ## Plot 3: Median Divvy Bike ride time per Community Area (above and below global median)
@@ -319,7 +329,7 @@ divvy_comp %>%
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 #table(divvy_comp$USER.TYPE, divvy_comp$Chicago.side)
 
-divvy_comp$USER.TYPE <- revalue(divvy_comp$USER.TYPE, replace = c("Customer" = "Single Riders", "Subscriber" = "Annual Member", "Dependent" = "24Hrs Unlimited Rides"))
+divvy_comp$USER.TYPE <- fct_recode(divvy_comp$USER.TYPE, "Customer" = "Single Riders", "Subscriber" = "Annual Member", "Dependent" = "24Hrs Unlimited Rides")
 
 divvy_comp %>%
   filter(!USER.TYPE == "24Hrs Unlimited Rides") %>%
@@ -340,7 +350,7 @@ divvy_comp %>%
   theme(axis.title.y = element_blank())
 ```
 
-## Plot 5.2: Proportion of population vs. proportion of trips originating in the area
+## Plot 5: Proportion of population vs. proportion of trips originating in the area
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 #Proportion of rides per chicago side
 divvy_comp %>%
@@ -374,6 +384,8 @@ divvy_comp %>%
 ```
 
 ## Plot 6.1: Average distance of divvy trip by Chicago Side 
+
+FIX THIS LAST! 
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 divvy_comp %>%
   filter(!is.na(distance_meters)) %>%
@@ -394,7 +406,8 @@ divvy_comp %>%
     caption = "Chicago Data Portal Divvy Trip Data",
     x = "Chicago 'Sides'",
     y = "Average Divvy Trip Distance (Meters)") +
-  coord_flip()
+  coord_flip() +
+   bikeshare_style()
 ```
 
 ## Plot 6.2: Distance density plot by Chicago side
