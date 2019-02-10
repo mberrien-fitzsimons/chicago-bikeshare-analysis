@@ -21,6 +21,7 @@ library(ggmap)
 library(lubridate)
 library(sf)
 library(plotKML)
+library(plyr)
 # devtools::install_github('cttobin/ggthemr') # This sets a theme for the entire session
 
 #register_google(key = "AIzaSyDu8dhum7j58jpfpQq6aE2jcZLgku9wzzI")
@@ -161,17 +162,18 @@ display.pal(colors_all, sel=1:length(colors_all), names=FALSE)
 bikeshare_style <- function() {
   theme(
     axis.line = element_line(size = 0.05),
-    text = element_text(family = "SourceSerifPro-Regular", face = "plain", 
-                              colour = "black", size = 10, 
+    text = element_text(family = "SourceSerifPro-Regular", face = "bold", 
+                              colour = "black", size = 11, 
                               hjust = 0.5, vjust = 1, angle = 0, 
                               lineheight = 0.9), 
     plot.subtitle = element_text(family = "SourceSerifPro-Regular",
-                               size = 8), 
+                               size = 9), 
     legend.background = element_rect(fill = "white", color = "black", size = 0.1),
     
     axis.text = element_text(family="SourceSerifPro-Regular",
-                           size=8,
-                           color="#222222"),
+                           size=9,
+                           color="#222222",
+                           face = "bold"),
     axis.text.x = element_text(vjust = 1), 
     axis.ticks = element_blank(),
     panel.grid.major = element_blank(),
@@ -334,7 +336,8 @@ divvy_comp %>%
     fill = "Divvy Plan Types") +
   scale_y_continuous(expand=c(0,0)) +
   scale_x_discrete(expand=c(0,0)) +
-  scale_fill_bikeshare(palette = "two_variables")
+  scale_fill_bikeshare(palette = "two_variables") +
+  theme(axis.title.y = element_blank())
 ```
 
 ## Plot 5.2: Proportion of population vs. proportion of trips originating in the area
@@ -353,7 +356,11 @@ divvy_comp %>%
   gather(key = object, value = value, c(sum_pop, sum_rides)) %>%
   ggplot(aes(x = object, y = value, fill = Chicago.side)) +
   geom_col(position = "fill") +
-  ggtitle("Proportion of population vs. proportion of trips originating in the area") 
+  ggtitle("Proportion of population vs. proportion of trips originating in the area") +
+  scale_fill_bikeshare() +
+  bikeshare_style() +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_x_discrete(expand=c(0,0))
 ```
 
 ## Plot 5.2: Proportion of stations vs. proportion of trips originating in the area
@@ -367,7 +374,11 @@ divvy_comp %>%
   gather(key = object, value = value, c(n_rides, n_stations)) %>%
   ggplot(aes(x = object, y = value, fill = Chicago.side)) +
   geom_col(position = "fill") +
-  ggtitle("Proportion of stations vs. proportion of trips originating in the area")
+  ggtitle("Proportion of stations vs. proportion of trips originating in the area") +
+  scale_fill_bikeshare() +
+  bikeshare_style() +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_x_discrete(expand=c(0,0))
 
 ```
 
