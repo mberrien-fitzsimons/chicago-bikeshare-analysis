@@ -20,10 +20,17 @@ library(extrafont)
 library(ggmap)
 library(lubridate)
 library(sf)
+library(plotKML)
 # devtools::install_github('cttobin/ggthemr') # This sets a theme for the entire session
 
 #register_google(key = "AIzaSyDu8dhum7j58jpfpQq6aE2jcZLgku9wzzI")
 
+```
+
+
+```{r global_options, include=FALSE}
+# Set height and width of figures in RMarkdown
+knitr::opts_chunk$set(fig.width=10, fig.height=8, echo=FALSE, warning=FALSE, message=FALSE)
 ```
 
 
@@ -36,7 +43,7 @@ saveRDS(divvy_trips, file = "divvy_trips.Rda")
 ```
 
 
-```{r eval=FALSE, warning=FALSE, message=FALSE, error=FALSE, include=FALSE}
+```{r warning=FALSE, message=FALSE, error=FALSE, include=FALSE}
 # Read in datasets
 # Chicago Census Information 
 census_2010 <- 
@@ -81,23 +88,53 @@ divvy_comp <-
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 # Create color palette
 # Source: https://drsimonj.svbtle.com/creating-corporate-colour-palettes-for-ggplot2
-bikeshare_colors <- c(
-  aqua    = "#96ceb4",
-  lite_yellow  = "#ffeead",
-  red  = "#ff6f69",
-  yellow    = "#ffcc5c",
-  green   = "#88d8b0")
 
-# Create function 
-bikeshare_cols <- function(...) {
+# Chosen Colors
+colors_all <- c(
+  light_blue   = "#a6cee3",
+  dark_blue    = "#1f78b4",
+  light_green  = "#b2df8a",
+  dark_green   = "#33a02c",
+  light_red    = "#fb9a99", 
+  dark_red     = "#e31a1c",
+  light_orange = "#fdbf6f",
+  dark_orange  = "#ff7f00",
+  light_purple = "#cab2d6")
+
+# Color function (makes it possible to call colors by name)
+bikeshare_colors<- function(...) {
   cols <- c(...)
-
   if (is.null(cols))
-    return (bikeshare_colors)
-
-  bikeshare_colors[cols]
+    return (colors_all)
+  colors_all[cols]
 }
 
+# Create Pallette
+bikeshare_palettes <- list(
+  main = bikeshare_colors("light_blue", "dark_blue", "light_green", "dark_green", 
+                        "light_red", "dark_red", "light_orange", "dark_orange", "light_purple"),  
+  dark = bikeshare_colors("dark_blue", "dark_green", "dark_red", "dark_orange", "light_purpl"),
+  light = bikeshare_colors("light_blue", "light_green", "light_red", "light_orange", "light_purple"),
+  blue_scale = bikeshare_colors("dark_blue", "light_blue"), 
+  green_scale = bikeshare_colors("dark_green", "light_green"), 
+  red_scale = bikeshare_colors("dark_red", "light_red"), 
+  orange_scale = bikeshare_colors("dark_orange", "light_orange")
+  )
+
+# Create Pallette function 
+bikeshare_pal <- function(palette = "main", reverse = FALSE, ...) {
+  pal <- bikeshare_palettes[[palette]]
+
+  if (reverse) pal <- rev(pal)
+
+  colorRampPalette(pal, ...)
+}
+
+# Continuous usage example
+# bikeshare_pal("dark")(10)
+
+# print main color palette
+display.pal(colors_all, sel=1:length(colors_all), names=FALSE)
 
 # Create Theme 
 bikeshare_style <- function() {
@@ -277,7 +314,7 @@ divvy_comp %>%
 #Proportion of rides per chicago side
 divvy_comp %>%
   filter(!is.na(Community.Areas)) %>%
-  filter(year(START.TIME) == c(2014, 2015, 2016, 2017)) %>%
+  filter(year(START.TIME) == c(2017)) %>%
   group_by(Community.Areas) %>%
   summarise(pop = unique(Total.Population), 
             n_rides = n()) %>%
@@ -285,24 +322,10 @@ divvy_comp %>%
   group_by(Chicago.side) %>%
   summarise(sum_pop = sum(pop), 
             sum_rides = sum(n_rides)) %>%
-  ggplot(aes(x = 1, y = sum_rides, fill = Chicago.side)) +
+  gather(key = object, value = value, c(sum_pop, sum_rides)) %>%
+  ggplot(aes(x = object, y = value, fill = Chicago.side)) +
   geom_col(position = "fill") +
-  ggtitle("Proportion of rides per Chicago Side")
-
-#Proportion of population per chicago side
-divvy_comp %>%
-  filter(!is.na(Community.Areas)) %>%
-  filter(year(START.TIME) == c(2014, 2015, 2016, 2017)) %>%
-  group_by(Community.Areas) %>%
-  summarise(pop = unique(Total.Population), 
-            n_rides = n()) %>%
-  left_join(chi_ca, by = "Community.Areas") %>%
-  group_by(Chicago.side) %>%
-  summarise(sum_pop = sum(pop), 
-            sum_rides = sum(n_rides)) %>%
-  ggplot(aes(x = 1, y = sum_pop, fill = Chicago.side)) +
-  geom_col(position = "fill") +
-  ggtitle("Proportion of population per Chicago side")
+  ggtitle("Proportion of population vs. proportion of trips originating in the area")
 ```
 
 ## Plot 5.2: Proportion of stations vs. proportion of trips originating in the area
@@ -315,7 +338,9 @@ divvy_comp %>%
             n_stations = n_distinct(FROM.STATION.NAME)) %>%
   gather(key = object, value = value, c(n_rides, n_stations)) %>%
   ggplot(aes(x = object, y = value, fill = Chicago.side)) +
-  geom_col(position = "fill")
+  geom_col(position = "fill") +
+  ggtitle("Proportion of stations vs. proportion of trips originating in the area")
+
 ```
 
 ## Plot 6.1: Average distance of divvy trip by Chicago Side 
