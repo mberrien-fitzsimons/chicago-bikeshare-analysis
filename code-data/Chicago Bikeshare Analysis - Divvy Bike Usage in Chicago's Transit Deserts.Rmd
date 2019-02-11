@@ -20,6 +20,7 @@ library(extrafont)
 library(ggmap)
 library(lubridate)
 library(sf)
+library(directlabels)
 #library(plotKML)
 # devtools::install_github('cttobin/ggthemr') # This sets a theme for the entire session
 
@@ -261,15 +262,20 @@ divvy_comp %>%
   dplyr::summarise(n_trips = n()) %>%
   ggplot(aes(x = date, y = n_trips, fill = season)) +
   geom_bar(stat = "identity") +
-  coord_polar() +
+  coord_polar(start = 6.1) +
+#  scale_fill_discrete(breaks = c(Summer, Fall, Winter, Spring)) +
   scale_fill_bikeshare(palette = "dark") +
-  theme(
-    legend.background = element_rect(fill = "white", color = "black", size = 0.1),
+  theme(legend.background = element_rect(fill = "white", color = "black", size = 0.1),
     panel.background = element_rect(fill = "white", colour = NA),
     strip.background = element_rect(fill = "white"),
     plot.background = element_rect(colour = "white", fill = "white", size = 1), 
-    panel.grid = element_line(color = "black", size = 0.05)
-  )
+    panel.grid = element_line(color = "black", size = 0.05), 
+    axis.title.y = element_blank(), 
+    axis.title.x = element_blank()) +
+  labs(title = "Daily Divvy bike usage from June 2016 - June 2017",
+    subtitle = "Daily bike usage numbers throughout the entire City of Chicago \nfrom summer through spring",
+    caption = "Source: Chicago Data Portal",
+    fill = "Seasons")
 
 ```
 
