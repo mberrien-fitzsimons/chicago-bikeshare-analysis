@@ -30,12 +30,6 @@ library(forcats)
 ```
 
 
-```{r global_options, include=FALSE}
-# Set height and width of figures in RMarkdown
-knitr::opts_chunk$set(fig.width=10, fig.height=8, echo=FALSE, warning=FALSE, message=FALSE)
-```
-
-
 ```{r eval=FALSE, include=FALSE}
 # Read-in and Save Large Data Sets
 divvy_trips <- 
@@ -83,11 +77,14 @@ divvy_comp <-
              c(FROM.LONGITUDE, FROM.LATITUDE), ncol = 2),
                                    matrix(
                                      c(TO.LONGITUDE, TO.LATITUDE), ncol = 2)))
+
+# Chicago Map by Community Areas
+chicago_map <- 
+  st_read("boundaries-communityareas/geo_export_07d5c241-72fe-46c1-bb00-a282acf7a63c.shp")
 ```
 
 
-## Color Palette & Styling 
-```{r warning=FALSE, message=FALSE, error=FALSE}
+```{r warning=FALSE, message=FALSE, error=FALSE, include=FALSE}
 # Create color palette
 # Source: https://drsimonj.svbtle.com/creating-corporate-colour-palettes-for-ggplot2
 
@@ -210,17 +207,14 @@ theme_clean_map <- function(base_size = 12) {
 }
 ```
 
-## Map 1: Map of Chicago with Population Density & Transit Deserts (colors are Chicago side)
+###Map 1: Map of Chicago Community Areas Colored by Chicago Sides'
 ```{r warning=FALSE, message=FALSE, error=FALSE}
-# Chicago Map by Community Areas
-chicago_map <- 
-  st_read("boundaries-communityareas/geo_export_07d5c241-72fe-46c1-bb00-a282acf7a63c.shp")
-
+# Merge census and community area data  
 census_update <- full_join(census_2010, chi_ca, by = "Community.Areas") %>%
   select(-X4, -X5)
-
 census_update$Community.Areas <- factor(census_update$Community.Areas)
 
+# Merge census and chicago map data 
 map_merged <- left_join(chicago_map, census_update, by = c("area_num_1" = "Community.Areas"))
 
 # Simple map of divvy bike station locations throughout the city of chicago + Colored by Chicago side 
@@ -237,16 +231,14 @@ ggplot() +
                               hjust = 0.5, vjust = 1, angle = 0, 
                               lineheight = 0.9), 
     rect = element_blank()) + # Remove map gridlines
-  labs(title = "Chicago Divvy bike station \nopenings by year",
-    subtitle = "From 2013 to 2018",
+  labs(title = "Chicago Community Areas Grouped by 'Side'",
+#    subtitle = "From 2013 to 2018",
     caption = "Source: Chicago Data Portal", 
-    color = "Years") +
+    fill = "Chicago Sides'") +
   scale_fill_bikeshare(palette = "main")
-
-
 ```
 
-## Map 2: Map of Divvy Bike Station Locations by year 
+###Map 2: Map of Divvy Bike station locations colored by opening year
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 # Makes list of first bike check-out of each station. This gives opening date of each station
 # Source: https://stackoverflow.com/questions/19944334/extract-rows-for-the-first-occurrence-of-a-variable-in-a-data-frame
@@ -268,10 +260,15 @@ divvy_opening <-
   mutate(OPENING.YEAR = year(OPENING.DATE)) %>%
   filter(!is.na(OPENING.YEAR))
 
+# Filter Evanston Points
+divvy_opening_sub <- 
+  divvy_opening %>%
+  filter(!Latitude >= 42.02346)
+
 # End Map 
 ggplot() +
   geom_sf(data = chicago_map, fill = "grey", col = "white") +
-  geom_point(data = divvy_opening, aes(Longitude, Latitude, color = factor(OPENING.YEAR)), size = 0.3) +
+  geom_point(data = divvy_opening_sub, aes(Longitude, Latitude, color = factor(OPENING.YEAR)), size = 0.3) +
   ggtitle("Divvy Bike Station Opening by Year") +
 #  bikeshare_style() + 
   theme(legend.position = c(0.9, 0.7),
@@ -290,19 +287,9 @@ ggplot() +
     caption = "Source: Chicago Data Portal", 
     color = "Years") +
   scale_color_bikeshare(palette = "dark")
-
-
-#  opts(legend.key.height=unit(3,"line"))
-
-
-#    panel.grid.major = element_blank(), 
-#    panel.grid.minor = element_blank(), 
-#    panel.border = element_blank(), 
-#    plot.background = element_rect(color = NA, fill = NA)) +
-#  scale_x_continuous(breaks = NULL)) +
 ```
 
-## Plot 1: Seasonal bike usage fluxuations 
+###Plot 1: Divvy bike usage fluxuations by season
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 #Number of bikes used per day from Summer 2016 to Summer 2017
 # Source: https://medium.com/optima-blog/using-polar-coordinates-for-better-visualization-1d337b6c9dec
@@ -349,7 +336,8 @@ divvy_comp %>%
 
 ```
 
-## Plot 2: Usage fluxuation by day broken up by Chicago Sides
+###Plot 2: Usage fluxuation by day broken up by Chicago Sides
+
 The Southwest and West side show inverse patterns during the day. 
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 divvy_comp %>%
@@ -382,7 +370,7 @@ divvy_comp %>%
         axis.title.y = element_blank())
 ```
 
-## Plot 3: Median Divvy Bike ride time per Community Area (above and below global median)
+###Plot 3: Median Divvy Bike ride time per Community Area (above and below global median)
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 # Global median time for trip duration in the city of chicago
 # Median trip duration in Chicago is 11.46667	minutes
@@ -419,7 +407,7 @@ divvy_comp %>%
     fill = "Divvy Plan Types")
 ```
 
-## Plot 4: Divvy Bike Customer type by Chicago Side (proportions)
+###Plot 4: Divvy Bike Customer type by Chicago Side (percentages)
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 #table(divvy_comp$USER.TYPE, divvy_comp$Chicago.side)
 
@@ -446,7 +434,7 @@ divvy_comp %>%
   theme(axis.title.y = element_blank())
 ```
 
-## Plot 5: Proportion of population vs. proportion of trips originating in the area
+###Plot 5: Proportion of population vs. proportion of trips originating in the area
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 #Proportion of rides per chicago side
 divvy_comp %>%
@@ -479,9 +467,7 @@ divvy_comp %>%
         axis.title.y=element_blank())
 ```
 
-## Plot 6.1: Average distance of divvy trip by Chicago Side 
-
-FIX THIS LAST! 
+###Plot 6: Average distance of divvy trip by Chicago Side 
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 divvy_comp %>%
   filter(!is.na(distance_meters)) %>%
@@ -494,11 +480,11 @@ divvy_comp %>%
   group_by(Chicago.side) %>%
   dplyr::summarise(avg_distance_meters = mean(distance_meters)) %>%
   ggplot(aes(x = reorder(Chicago.side, avg_distance_meters), y = avg_distance_meters, 
-             fill = Chicago.side), fill = "#2c7bb6") +
+             color = Chicago.side), fill = "#2c7bb6") +
   geom_point() +
   theme(legend.position = "none") +
   labs(title = "The South Side accounts for the shortest average Divvy \ntrips within the City of Chicago",
-    subtitle = "Average distance traveled by divvy trips in 2018",
+    subtitle = "Average distance traveled per Chicago Side by divvy bikes in 2018",
     caption = "Chicago Data Portal Divvy Trip Data",
     x = "Chicago 'Sides'",
     y = "Average Divvy Trip Distance (Meters)") +
@@ -506,22 +492,9 @@ divvy_comp %>%
    bikeshare_style()
 ```
 
-## Plot 6.2: Distance density plot by Chicago side
-```{r}
-divvy_comp %>%
-  filter(Chicago.side %in% c("South Side", "Far North side")) %>%
-  ggplot(aes(x = log(distance_meters), fill = Chicago.side)) +
-  geom_density(alpha = 0.3)
-```
+###Plot 7: Average Ride time reducas as number of station increases
 
-## Plot 7: Average Ride time reducas as number of station increases
-
-This graph compares divvy ride time duration changes between 2014 and 2017. This shows a strong linkage between number of bike stations in an area and trip duration. All areas show a clear decline in the average trip duration as the number of stations increase. 
-----------
-4.	Slope chart -
-
-I'd instead argue for stations on the x-axis, divvy trip time on the y-axis, and time labeling each of the two dots. A small directed scatterplot, could really improve this visualization.
-
+This graph compares Divvy ride time duration changes between 2014 and 2017. This shows a strong linkage between number of divvy bike stations in an area and trip duration. All areas show a clear decline in the average trip duration as the number of stations increase. 
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 divvy_stations_year <- 
   divvy_comp %>%
@@ -542,25 +515,27 @@ divvy_comp %>%
          day = day(START.TIME), 
          date = as.Date(paste(year, month, day, sep='-')), 
          YEAR.MONTH = factor(paste(year, month, sep='-'))) %>%
-  filter(year == c(2014, 2017)) %>%
+  filter(year == c(2015, 2017)) %>%
   group_by(Chicago.side, year) %>%
   summarise(average_trip_time = mean(TRIP.DURATION)) %>%
   left_join(divvy_stations_year, by = c("Chicago.side", "year")) %>%
   arrange(Chicago.side, year) %>%
   ggplot(aes(x = year, y = average_trip_time, group = Chicago.side, 
-             size = n_stations, 
              color = as.factor(Chicago.side))) +
-  geom_point(alpha = 0.6) +
+  geom_point(size = 2) +
   geom_line(size = 1) +
   labs(title = "Average ride time reduces as number of stations increase",
-    subtitle = "Average trip time comparios across all eight 'Chicago Sides' in 2014 and 2017",
+    subtitle = "Average trip time comparison across all 'Chicago Sides' in 2015 and 2017",
     caption="Chicago Data Portal Divvy Trip Data",
     x="Year",
     y="Divvy Trip Time (In Seconds)",
     color = "Chicago 'Side'",
     size = "Number of Stations") +
-  bikeshare_style()
-
+  theme_bw() +
+#  theme(legend.position = "none") +
+  theme(panel.border = element_blank()) +
+  scale_x_discrete(position = "bottom", breaks = c("2015", "2017"))
+#  scale_x_discrete(breaks = c(2014, 2017))
 ```
 
 
