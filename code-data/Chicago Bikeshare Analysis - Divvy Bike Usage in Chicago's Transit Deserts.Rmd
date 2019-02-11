@@ -262,7 +262,15 @@ divvy_comp %>%
   ggplot(aes(x = date, y = n_trips, fill = season)) +
   geom_bar(stat = "identity") +
   coord_polar() +
-  scale_fill_bikeshare(palette = "dark")
+  scale_fill_bikeshare(palette = "dark") +
+  theme(
+    legend.background = element_rect(fill = "white", color = "black", size = 0.1),
+    panel.background = element_rect(fill = "white", colour = NA),
+    strip.background = element_rect(fill = "white"),
+    plot.background = element_rect(colour = "white", fill = "white", size = 1), 
+    panel.grid = element_line(color = "black", size = 0.05)
+  )
+
 ```
 
 ## Plot 2: Usage fluxuation by day broken up by Chicago Sides
