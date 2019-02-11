@@ -132,6 +132,7 @@ bikeshare_pal <- function(palette = "main", reverse = FALSE, ...) {
   colorRampPalette(pal, ...)
 }
 
+# Color scale Fill 
 scale_color_bikeshare <- function(palette = "main", discrete = TRUE, reverse = FALSE, ...) {
   pal <- bikeshare_pal(palette = palette, reverse = reverse)
 
@@ -142,6 +143,7 @@ scale_color_bikeshare <- function(palette = "main", discrete = TRUE, reverse = F
   }
 }
 
+# Fill scale fill 
 scale_fill_bikeshare <- function(palette = "main", discrete = TRUE, reverse = FALSE, ...) {
   pal <- bikeshare_pal(palette = palette, reverse = reverse)
 
@@ -186,14 +188,33 @@ bikeshare_style <- function() {
     plot.background = element_rect(colour = "white", fill = "white", size = 1),
     plot.margin = unit(c(2, 2, 1, 1), "lines")
   )
-  }
+}
+
+
+theme_clean_map <- function(base_size = 12) {
+  require(grid)
+  theme_grey(base_size) %+replace%
+    theme(
+      axis.title      =   element_blank(),
+      axis.text       =   element_blank(),
+      axis.ticks       =   element_blank(),
+      panel.background    =   element_blank(),
+      panel.grid      =   element_blank(),
+      panel.grid.major =  element_line(size = 0),
+      panel.grid.minor = element_blank(),
+      panel.spacing    =   unit(0,"lines"),
+      plot.margin     =   unit(c(0,0,0,0),"lines"),
+      complete = TRUE
+    )
+}
 ```
 
 ## Map 1: Map of Chicago with Population Density & Transit Deserts (colors are Chicago side)
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 # Chicago Map by Community Areas
 chicago_map <- 
-  st_read("/Users/Misha/Documents/04-coding-projects/chicago-bikeshare-analysis/code-data/boundaries-communityareas/geo_export_07d5c241-72fe-46c1-bb00-a282acf7a63c.shp")
+  st_read("boundaries-communityareas/geo_export_07d5c241-72fe-46c1-bb00-a282acf7a63c.shp")
+
 # Simple map of divvy bike station locations throughout the city of chicago + Colored by Chicago side 
 ggplot() +
   geom_sf(data = chicago_map, col="white") +
@@ -228,8 +249,32 @@ divvy_opening <-
 ggplot() +
   geom_sf(data = chicago_map, fill = "grey", col = "white") +
   geom_point(data = divvy_opening, aes(Longitude, Latitude, color = factor(OPENING.YEAR)), size = 0.3) +
-  scale_color_bikeshare(palette = "light") +
-  ggtitle("Divvy Bike Station Opening by Year")
+  ggtitle("Divvy Bike Station Opening by Year") +
+  bikeshare_style() + 
+  theme_clean_map() +
+  theme(legend.position = c(0.8, 0.2),
+    axis.title.y = element_blank(), 
+    axis.title.x = element_blank(), 
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(), 
+    axis.ticks = element_blank()) + 
+#    legend.position = "bottom") +
+  labs(title = "Chicago Divvy bike station openings",
+    subtitle = "From 2013 to 2018",
+    caption = "Source: Chicago Data Portal", 
+    color = "Station \nOpening Year") +
+  guides(shape = guide_legend(override.aes = list(size = 5))) +
+  scale_color_bikeshare(palette = "dark")
+
+
+#  opts(legend.key.height=unit(3,"line"))
+
+
+#    panel.grid.major = element_blank(), 
+#    panel.grid.minor = element_blank(), 
+#    panel.border = element_blank(), 
+#    plot.background = element_rect(color = NA, fill = NA)) +
+#  scale_x_continuous(breaks = NULL)) +
 ```
 
 ## Plot 1: Seasonal bike usage fluxuations 
@@ -366,9 +411,11 @@ divvy_comp %>%
   labs(title = "Divvy Bike Single-ride usage rate is highest on the South Side",
     subtitle = "Divvy bike customers can choose between three different plans: Single Ride, Explorer Pass and \nAnnual Membership.The proportion of Explorer Pass customers is neglibible and has been omitted.",
     caption = "Source: Chicago Data Portal",
-    y = "Customer Type Proportions by Chicago Side", 
+    y = "% Customer Type by Chicago Side", 
     fill = "Divvy Plan Types") +
-  scale_y_continuous(expand=c(0,0)) +
+  scale_y_continuous(expand=c(0,0), 
+                     labels=c("0.00" = "0", "0.25" = "25", 
+                                             "0.50" = "50", "0.75" = "75", "1.00" = "100")) +
   scale_x_discrete(expand=c(0,0)) +
   scale_fill_bikeshare(palette = "two_variables") +
   theme(axis.title.y = element_blank())
@@ -445,6 +492,11 @@ divvy_comp %>%
 ## Plot 7: Average Ride time reducas as number of station increases
 
 This graph compares divvy ride time duration changes between 2014 and 2017. This shows a strong linkage between number of bike stations in an area and trip duration. All areas show a clear decline in the average trip duration as the number of stations increase. 
+----------
+4.	Slope chart -
+
+I'd instead argue for stations on the x-axis, divvy trip time on the y-axis, and time labeling each of the two dots. A small directed scatterplot, could really improve this visualization.
+
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 divvy_stations_year <- 
   divvy_comp %>%
@@ -485,4 +537,5 @@ divvy_comp %>%
   bikeshare_style()
 
 ```
+
 
