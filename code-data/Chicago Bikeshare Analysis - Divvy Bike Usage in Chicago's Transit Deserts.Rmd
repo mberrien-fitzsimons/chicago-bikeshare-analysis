@@ -21,6 +21,7 @@ library(ggmap)
 library(lubridate)
 library(sf)
 library(directlabels)
+library(forcats)
 #library(plotKML)
 # devtools::install_github('cttobin/ggthemr') # This sets a theme for the entire session
 
@@ -215,12 +216,34 @@ theme_clean_map <- function(base_size = 12) {
 chicago_map <- 
   st_read("boundaries-communityareas/geo_export_07d5c241-72fe-46c1-bb00-a282acf7a63c.shp")
 
+census_update <- full_join(census_2010, chi_ca, by = "Community.Areas") %>%
+  select(-X4, -X5)
+
+census_update$Community.Areas <- factor(census_update$Community.Areas)
+
+map_merged <- left_join(chicago_map, census_update, by = c("area_num_1" = "Community.Areas"))
+
 # Simple map of divvy bike station locations throughout the city of chicago + Colored by Chicago side 
 ggplot() +
-  geom_sf(data = chicago_map, col="white") +
-  geom_point(data = divvy_stations, aes(Longitude, Latitude), size = 0.2) +
+  geom_sf(data = map_merged, aes(fill = Chicago.side), col="white") +
 #  scale_fill_viridis_c(name = bikeshare_colors) +
-  ggtitle("Divvy Bike Station Locations")
+  theme(axis.title.y = element_blank(), 
+    axis.title.x = element_blank(), 
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(), 
+    axis.ticks = element_blank(),
+    text = element_text(family = "SourceSerifPro-Regular", face = "bold", 
+                              colour = "black", size = 11, 
+                              hjust = 0.5, vjust = 1, angle = 0, 
+                              lineheight = 0.9), 
+    rect = element_blank()) + # Remove map gridlines
+  labs(title = "Chicago Divvy bike station \nopenings by year",
+    subtitle = "From 2013 to 2018",
+    caption = "Source: Chicago Data Portal", 
+    color = "Years") +
+  scale_fill_bikeshare(palette = "main")
+
+
 ```
 
 ## Map 2: Map of Divvy Bike Station Locations by year 
@@ -250,18 +273,22 @@ ggplot() +
   geom_sf(data = chicago_map, fill = "grey", col = "white") +
   geom_point(data = divvy_opening, aes(Longitude, Latitude, color = factor(OPENING.YEAR)), size = 0.3) +
   ggtitle("Divvy Bike Station Opening by Year") +
-  bikeshare_style() + 
-  theme_clean_map() +
-  theme(legend.position = c(1, 0.7),
+#  bikeshare_style() + 
+  theme(legend.position = c(0.9, 0.7),
     axis.title.y = element_blank(), 
     axis.title.x = element_blank(), 
     axis.text.x = element_blank(),
     axis.text.y = element_blank(), 
-    axis.ticks = element_blank()) + 
-  labs(title = "Chicago Divvy bike station openings",
+    axis.ticks = element_blank(),
+    text = element_text(family = "SourceSerifPro-Regular", face = "bold", 
+                              colour = "black", size = 11, 
+                              hjust = 0.5, vjust = 1, angle = 0, 
+                              lineheight = 0.9), 
+    rect = element_blank()) + # Remove map gridlines
+  labs(title = "Chicago Divvy bike station \nopenings by year",
     subtitle = "From 2013 to 2018",
     caption = "Source: Chicago Data Portal", 
-    color = "Station \nOpening Year") +
+    color = "Years") +
   scale_color_bikeshare(palette = "dark")
 
 
