@@ -208,7 +208,7 @@ theme_clean_map <- function(base_size = 12) {
 ```
 
 ###Map 1: Map of Chicago Community Areas Colored by Chicago Sides'
-```{r warning=FALSE, message=FALSE, error=FALSE, fig.height=9, fig.width=6}
+```{r warning=FALSE, message=FALSE, error=FALSE}
 # Merge census and community area data  
 census_update <- full_join(census_2010, chi_ca, by = "Community.Areas") %>%
   select(-X4, -X5)
@@ -239,7 +239,7 @@ ggplot() +
 ```
 
 ###Map 2: Map of Divvy Bike station locations colored by opening year
-```{r warning=FALSE, message=FALSE, error=FALSE, fig.height=9, fig.width=6}
+```{r warning=FALSE, message=FALSE, error=FALSE}
 # Makes list of first bike check-out of each station. This gives opening date of each station
 # Source: https://stackoverflow.com/questions/19944334/extract-rows-for-the-first-occurrence-of-a-variable-in-a-data-frame
 station_dates <- 
