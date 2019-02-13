@@ -7,6 +7,14 @@ output:
     code_folding: hide
 ---
 
+1) Where are all these rides on the south-side originating? (which community area?). Zoom in on south side
+2) cost per ride
+3) something with gender divide 
+4) What happens with older station ridership when new stations openup nearby (use size and color to show change)
+5) busrouts for l trains and buses. There is a n ST function for width around lines. Make a map around rea that is not a distance around a certain point. (every bustop has a point). ST_buffer (look this up). could fill in the buffer area with colors. If I could get the l lines and shape. Could show that these are the areas within walking distance of an l station .
+
+- show this data overtime an
+
 
 ```{r include=FALSE}
 # Set-up Environment 
