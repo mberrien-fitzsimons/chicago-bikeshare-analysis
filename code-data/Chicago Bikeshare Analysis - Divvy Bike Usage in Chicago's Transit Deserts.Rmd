@@ -59,6 +59,7 @@ divvy <-
   mutate(STOP.TIME = mdy_hms(STOP.TIME), 
          START.TIME = mdy_hms(START.TIME)) %>%
   arrange(START.TIME)
+
 # Take 5% Sample of divvy dataset
 divvy_sample <- 
   sample_frac(divvy, size = .05)
@@ -67,12 +68,20 @@ divvy_sample <-
 chi_ca <- 
   read_csv("/Users/Misha/Documents/04-coding-projects/chicago-bikeshare-analysis/code-data/chi_community_areas.csv")
 
-# Divvy statio location 
+# Divvy station location 
 divvy_stations <- 
   read_csv("/Users/Misha/Documents/04-coding-projects/chicago-bikeshare-analysis/code-data/Divvy_Bicycle_Stations_In_Service.csv")
+
+# Chicago Map by Community Areas
+chicago_map <- 
+  st_read("/Users/Misha/Documents/04-coding-projects/chicago-bikeshare-analysis/code-data/boundaries-communityareas/geo_export_07d5c241-72fe-46c1-bb00-a282acf7a63c.shp")
+```
+
+```{r eval=FALSE, include=FALSE}
 # Add Community Area and population to divvy dataset
 divvy_census <-
-  divvy_sample %>%
+#  divvy_sample %>%
+  divvy %>%
   left_join(chi_ca, by = "Community.Areas")
 
 divvy_comp <- 
@@ -86,9 +95,25 @@ divvy_comp <-
                                    matrix(
                                      c(TO.LONGITUDE, TO.LATITUDE), ncol = 2)))
 
-# Chicago Map by Community Areas
-chicago_map <- 
-  st_read("boundaries-communityareas/geo_export_07d5c241-72fe-46c1-bb00-a282acf7a63c.shp")
+# Save File
+saveRDS(divvy_comp, file = "divvy_comp.Rda")
+```
+
+
+```{r warning=FALSE, message=FALSE, error=FALSE, include=FALSE}
+divvy_c <- 
+  readRDS("/Users/Misha/Documents/04-coding-projects/chicago-bikeshare-analysis/code-data/divvy_comp.Rda")
+```
+
+
+
+```{r}
+divvy_comp %>%
+  group_by(FROM.STATION.ID) %>%
+  summarise(open_date = min(START.TIME)) %>%
+  arrange(open_date) %>%
+
+
 ```
 
 
@@ -106,7 +131,14 @@ colors_all <- c(
   dark_red     = "#e31a1c",
   light_orange = "#fdbf6f",
   dark_orange  = "#ff7f00",
-  dark_purple = "#9290db")
+  dark_purple  = "#9290db", 
+  orange_blue1 = "#e8e532", 
+  orange_blue2 = "#eab931", 
+  orange_blue3 = "#df903b", 
+  orange_blue4 = "#c46e53", 
+  orange_blue5 = "#036eb0")
+
+#e8e532 #eab931 #df903b #c46e53 #036eb0
 
 # Color function (makes it possible to call colors by name)
 bikeshare_colors<- function(...) {
@@ -126,7 +158,9 @@ bikeshare_palettes <- list(
   green_scale = bikeshare_colors("dark_green", "light_green"), 
   red_scale = bikeshare_colors("dark_red", "light_red"), 
   orange_scale = bikeshare_colors("dark_orange", "light_orange"), 
-  two_variables = bikeshare_colors("dark_blue", "dark_orange")
+  two_variables = bikeshare_colors("dark_blue", "dark_orange"), 
+  map_step = bikeshare_colors( "orange_blue1", "orange_blue2", 
+                               "orange_blue3", "orange_blue4", "orange_blue5")
   )
 
 # Create Pallette function 
@@ -216,7 +250,7 @@ theme_clean_map <- function(base_size = 12) {
 ```
 
 ###Map 1: Map of Chicago Community Areas Colored by Chicago Sides'
-```{r warning=FALSE, message=FALSE, error=FALSE}
+```{r warning=FALSE, message=FALSE, error=FALSE, fig.height=9, fig.width=6}
 # Merge census and community area data  
 census_update <- full_join(census_2010, chi_ca, by = "Community.Areas") %>%
   select(-X4, -X5)
@@ -238,21 +272,46 @@ ggplot() +
                               colour = "black", size = 11, 
                               hjust = 0.5, vjust = 1, angle = 0, 
                               lineheight = 0.9), 
+#    legend.position = "none", 
     rect = element_blank()) + # Remove map gridlines
-  labs(title = "Community Areas Grouped by Chicago Side'",
+#  labs(fill = "Chicago Sides'"
+#   title = "Community Areas Grouped by Chicago Side'",
 #    subtitle = "From 2013 to 2018",
-    caption = "Source: Chicago Data Portal", 
-    fill = "Chicago Sides'") +
-  scale_fill_bikeshare(palette = "main")
+#    caption = "Source: Chicago Data Portal") +
+  scale_fill_bikeshare(palette = "main") +
+  guides(colour = guide_legend(override.aes = list(size=3)))
 ```
 
+
+```{r}
+station_total_year <- 
+  divvy_c[match(unique(divvy_c$TO.STATION.ID), divvy_c$TO.STATION.ID),] %>%
+  select(TO.STATION.ID, STOP.TIME, Chicago.side) %>%
+  arrange(STOP.TIME) %>%
+  mutate(year = year(STOP.TIME), 
+         month = month(STOP.TIME), 
+         day = day(STOP.TIME), 
+         OPENING.DATE = as.Date(paste(year, month, day, sep='-'))) %>%
+  select(year, TO.STATION.ID, Chicago.side) %>%
+  group_by(year, Chicago.side) %>%
+  summarise(station_openings = n())
+
+station_total_year
+
+```
+
+
 ###Map 2: Map of Divvy Bike station locations colored by opening year
-```{r warning=FALSE, message=FALSE, error=FALSE}
+```{r warning=FALSE, message=FALSE, error=FALSE, fig.height=7, fig.width=6}
 # Makes list of first bike check-out of each station. This gives opening date of each station
 # Source: https://stackoverflow.com/questions/19944334/extract-rows-for-the-first-occurrence-of-a-variable-in-a-data-frame
+
 station_dates <- 
   divvy[match(unique(divvy$TO.STATION.ID), divvy$TO.STATION.ID),] %>%
-  select(TO.STATION.ID, STOP.TIME) %>%
+  select(TO.STATION.ID, STOP.TIME)
+
+station_dates <-
+  station_dates %>%
   arrange(STOP.TIME) %>%
   mutate(year = year(STOP.TIME), 
          month = month(STOP.TIME), 
@@ -275,9 +334,9 @@ divvy_opening_sub <-
 
 # End Map 
 ggplot() +
-  geom_sf(data = chicago_map, fill = "grey", col = "white") +
+  geom_sf(data = chicago_map, fill = "#CCCCCC", col = "white") +
   geom_point(data = divvy_opening_sub, aes(Longitude, Latitude, color = factor(OPENING.YEAR)), size = 0.3) +
-  ggtitle("Divvy Bike Station Opening by Year") +
+#  ggtitle("Divvy Bike Station Opening by Year") +
 #  bikeshare_style() + 
   theme(axis.title.y = element_blank(), 
     axis.title.x = element_blank(), 
@@ -289,11 +348,13 @@ ggplot() +
                               hjust = 0.5, vjust = 1, angle = 0, 
                               lineheight = 0.9), 
     rect = element_blank()) + # Remove map gridlines
-  labs(title = "Chicago Divvy bike station \nopenings by year",
-    subtitle = "From 2013 to 2018",
-    caption = "Source: Chicago Data Portal", 
-    color = "Years") +
-  scale_color_bikeshare(palette = "dark")
+  labs(color = "Years", 
+    title = "Divvy bike stations opened first in West, Southwest and South Chicago \nand later expanded to Chicago's Northern and Southern regions",
+    subtitle = "By the end of 2013, Divvy opened 300 stations scattered along Chicago's Far North, \nNorth, Central, West, Southwest and South sides.",
+    caption = "Source: Chicago Data Portal"
+    ) +
+  scale_color_bikeshare(palette = "map_step") +
+  guides(colour = guide_legend(override.aes = list(size=6)))
 
 # legend.position = c(0.9, 0.7),
 ```
