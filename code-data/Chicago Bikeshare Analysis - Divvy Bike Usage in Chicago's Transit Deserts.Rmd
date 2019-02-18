@@ -282,7 +282,7 @@ ggplot() +
 ```
 
 Daily ridership ebbs and flows with the changing seasons. During the height of summer in 2016, trips reached a height of around 12,000 rides per day. During the winter months,  the average daily ridership drops to below 3,000. 
-```{r warning=FALSE, message=FALSE, error=FALSE, fig.height=6, fig.width=6}
+```{r warning=FALSE, message=FALSE, error=FALSE}
 #Number of bikes used per day from Summer 2016 to Summer 2017
 # Source: https://medium.com/optima-blog/using-polar-coordinates-for-better-visualization-1d337b6c9dec
 divvy_c %>%
@@ -361,6 +361,7 @@ divvy_c %>%
         plot.title = element_text(size=13, face="bold", 
                                   margin = margin(10, 0, 10, 0)))
 ```
+
 The percentage of Divvy bike trips that originate on the South Side far outstrips the areas percentage of Chicago's population. 
 ```{r warning=FALSE, message=FALSE, error=FALSE}
 #Proportion of rides per chicago side
@@ -378,7 +379,7 @@ divvy_c %>%
   ggplot(aes(x = object, y = value, fill = Chicago.side)) +
   geom_col(position = "fill") +
   bikeshare_style() +
-  labs(title = "Despite the South Side's low percentage of Chicago's overall population, over 40% of \ndivvy bike rides originate in the area.",
+  labs(title = "Despite the South Side's low percentage of Chicago's overall population, over 40% of \ndivvy bike rides originate in the area",
     subtitle = "2017 Divvy ridership data",
  #   y = "Customer Type Proportions by Chicago Side", 
     fill = "Chicago Sides'", 
@@ -431,7 +432,7 @@ divvy_c %>%
 ```
 
 Two Community areas on the South Side - Fuller Park and Grand Boulevard - account for over 80% of rides in the area. 
-```{r warning=FALSE, message=FALSE, error=FALSE}
+```{r warning=FALSE, message=FALSE, error=FALSE, fig.height=7, fig.width=8}
 divvy_c %>%
   filter(year(START.TIME) == c(2017)) %>%
   filter(!is.na(Community.Areas)) %>%
@@ -455,7 +456,7 @@ divvy_c %>%
 ```
 
 The first 30 minutes of bike rental time is free for annual members. Average trip duration is around 12 minutes Chicago-wide, with Community Areas falling both above and below the mean. 
-```{r warning=FALSE, message=FALSE, error=FALSE}
+```{r warning=FALSE, message=FALSE, error=FALSE, fig.height=7, fig.width=8}
 # Global median time for trip duration in the city of chicago
 # Median trip duration in Chicago is 11.46667	minutes
 #divvy_c %>%
