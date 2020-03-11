@@ -1,4 +1,4 @@
-Divvy Bike Usage in Chicago's Transit Deserts
+# Divvy Bike Usage in Chicago's Transit Deserts
 
 Policy Topic to be Examined: 
 Divvy Bike - Chicago’s bike share program - began operating in the summer of 2013. Since then the program has grown from 75 stations clustered mainly around Chicago’s Loop, to a system of 570+ stations with over 6,000 bikes spread around the City of Chicago. 
